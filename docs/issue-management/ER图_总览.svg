@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1430" viewBox="0 0 1800 1430">
+<title>问题管理 PostgreSQL ER图</title>
+<desc>六张表及五条实际外键；请求幂等表无关联外键，附件操作外键可空。</desc>
+<rect x="0" y="0" width="1800" height="1430" fill="#f5f8fc" stroke="#f5f8fc"/>
+<text x="40" y="68" font-family="Microsoft YaHei,sans-serif" font-size="38" font-weight="bold" fill="#26364b">问题管理 · PostgreSQL ER 图</text>
+<text x="42" y="109" font-family="Microsoft YaHei,sans-serif" font-size="21" font-weight="normal" fill="#62768c">6 张表  /  5 条物理外键  /  核心字段总览  /  依据 ddl.sql v0.2</text>
+<text x="1500" y="68" font-family="Microsoft YaHei,sans-serif" font-size="19" font-weight="normal" fill="#62768c">2026.11.07</text>
+<rect x="620" y="180" width="560" height="464" fill="#ffffff" stroke="#d8e1ec"/>
+<rect x="620" y="180" width="560" height="74" fill="#243d66" stroke="#243d66"/>
+<text x="638" y="211" font-family="Microsoft YaHei,sans-serif" font-size="23" font-weight="bold" fill="#ffffff">问题主表</text>
+<text x="638" y="239" font-family="Consolas,sans-serif" font-size="18" font-weight="normal" fill="#e8f0fa">im_issue</text>
+<rect x="621" y="254" width="558" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="633" y="275" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66">PK</text>
+<text x="708" y="277" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">id</text>
+<text x="1055" y="276" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">uuid</text>
+<text x="633" y="309" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66"></text>
+<text x="708" y="311" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">tenant_id</text>
+<text x="1055" y="310" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<rect x="621" y="322" width="558" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="633" y="343" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66"></text>
+<text x="708" y="345" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">issue_no</text>
+<text x="1055" y="344" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<text x="633" y="377" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66"></text>
+<text x="708" y="379" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">title</text>
+<text x="1055" y="378" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(100)</text>
+<rect x="621" y="390" width="558" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="633" y="411" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66"></text>
+<text x="708" y="413" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">status</text>
+<text x="1055" y="412" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(20)</text>
+<text x="633" y="445" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66"></text>
+<text x="708" y="447" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">version</text>
+<text x="1055" y="446" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">bigint</text>
+<rect x="621" y="458" width="558" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="633" y="479" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66"></text>
+<text x="708" y="481" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">raiser_id</text>
+<text x="1055" y="480" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<text x="633" y="513" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66"></text>
+<text x="708" y="515" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">handler_id ?</text>
+<text x="1055" y="514" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<rect x="621" y="526" width="558" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="633" y="547" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66"></text>
+<text x="708" y="549" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">room_id</text>
+<text x="1055" y="548" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<text x="633" y="581" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#243d66"></text>
+<text x="708" y="583" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">tc_sync_status</text>
+<text x="1055" y="582" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(16)</text>
+<text x="634" y="624" font-family="Microsoft YaHei,sans-serif" font-size="14" font-weight="normal" fill="#62768c">业务当前快照；外部ID未声明数据库外键</text>
+<rect x="40" y="180" width="510" height="362" fill="#ffffff" stroke="#d8e1ec"/>
+<rect x="40" y="180" width="510" height="74" fill="#3369a0" stroke="#3369a0"/>
+<text x="58" y="211" font-family="Microsoft YaHei,sans-serif" font-size="23" font-weight="bold" fill="#ffffff">处理记录</text>
+<text x="58" y="239" font-family="Consolas,sans-serif" font-size="18" font-weight="normal" fill="#e8f0fa">im_issue_action</text>
+<rect x="41" y="254" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="53" y="275" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#3369a0">PK</text>
+<text x="128" y="277" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">id</text>
+<text x="425" y="276" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">uuid</text>
+<text x="53" y="309" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#3369a0">FK</text>
+<text x="128" y="311" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">issue_id</text>
+<text x="425" y="310" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">uuid</text>
+<rect x="41" y="322" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="53" y="343" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#3369a0"></text>
+<text x="128" y="345" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">issue_version</text>
+<text x="425" y="344" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">bigint</text>
+<text x="53" y="377" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#3369a0"></text>
+<text x="128" y="379" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">action_type</text>
+<text x="425" y="378" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(20)</text>
+<rect x="41" y="390" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="53" y="411" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#3369a0"></text>
+<text x="128" y="413" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">operator_id</text>
+<text x="425" y="412" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<text x="53" y="445" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#3369a0"></text>
+<text x="128" y="447" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">adopted ?</text>
+<text x="425" y="446" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">boolean</text>
+<rect x="41" y="458" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="53" y="479" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#3369a0"></text>
+<text x="128" y="481" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">resolved ?</text>
+<text x="425" y="480" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">boolean</text>
+<text x="54" y="522" font-family="Microsoft YaHei,sans-serif" font-size="14" font-weight="normal" fill="#62768c">UK (issue_id, issue_version)；保存每轮处理</text>
+<rect x="1240" y="180" width="510" height="260" fill="#ffffff" stroke="#d8e1ec"/>
+<rect x="1240" y="180" width="510" height="74" fill="#167d79" stroke="#167d79"/>
+<text x="1258" y="211" font-family="Microsoft YaHei,sans-serif" font-size="23" font-weight="bold" fill="#ffffff">历史参与者</text>
+<text x="1258" y="239" font-family="Consolas,sans-serif" font-size="18" font-weight="normal" fill="#e8f0fa">im_issue_participant</text>
+<rect x="1241" y="254" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="1253" y="275" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#167d79">PK/FK</text>
+<text x="1328" y="277" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">issue_id</text>
+<text x="1625" y="276" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">uuid</text>
+<text x="1253" y="309" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#167d79">PK</text>
+<text x="1328" y="311" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">user_id</text>
+<text x="1625" y="310" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<rect x="1241" y="322" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="1253" y="343" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#167d79"></text>
+<text x="1328" y="345" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">tenant_id</text>
+<text x="1625" y="344" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<text x="1253" y="377" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#167d79"></text>
+<text x="1328" y="379" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">last_participated_at</text>
+<text x="1625" y="378" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">timestamptz</text>
+<text x="1254" y="420" font-family="Microsoft YaHei,sans-serif" font-size="14" font-weight="normal" fill="#62768c">PK (issue_id, user_id)；转交后保留旧处理人</text>
+<rect x="40" y="830" width="510" height="328" fill="#ffffff" stroke="#d8e1ec"/>
+<rect x="40" y="830" width="510" height="74" fill="#a86624" stroke="#a86624"/>
+<text x="58" y="861" font-family="Microsoft YaHei,sans-serif" font-size="23" font-weight="bold" fill="#ffffff">问题附件</text>
+<text x="58" y="889" font-family="Consolas,sans-serif" font-size="18" font-weight="normal" fill="#e8f0fa">im_issue_attachment</text>
+<rect x="41" y="904" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="53" y="925" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#a86624">PK</text>
+<text x="128" y="927" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">id</text>
+<text x="425" y="926" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">uuid</text>
+<text x="53" y="959" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#a86624">FK</text>
+<text x="128" y="961" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">issue_id</text>
+<text x="425" y="960" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">uuid</text>
+<rect x="41" y="972" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="53" y="993" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#a86624">FK</text>
+<text x="128" y="995" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">action_id ?</text>
+<text x="425" y="994" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">uuid</text>
+<text x="53" y="1027" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#a86624"></text>
+<text x="128" y="1029" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">purpose</text>
+<text x="425" y="1028" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(16)</text>
+<rect x="41" y="1040" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="53" y="1061" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#a86624"></text>
+<text x="128" y="1063" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">state</text>
+<text x="425" y="1062" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(16)</text>
+<text x="53" y="1095" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#a86624"></text>
+<text x="128" y="1097" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">object_key</text>
+<text x="425" y="1096" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(512)</text>
+<text x="54" y="1138" font-family="Microsoft YaHei,sans-serif" font-size="14" font-weight="normal" fill="#62768c">action_id 可空；截图/临时文件可无操作关联</text>
+<rect x="1240" y="700" width="510" height="328" fill="#ffffff" stroke="#d8e1ec"/>
+<rect x="1240" y="700" width="510" height="74" fill="#6a55a0" stroke="#6a55a0"/>
+<text x="1258" y="731" font-family="Microsoft YaHei,sans-serif" font-size="23" font-weight="bold" fill="#ffffff">可靠事件</text>
+<text x="1258" y="759" font-family="Consolas,sans-serif" font-size="18" font-weight="normal" fill="#e8f0fa">im_issue_outbox</text>
+<rect x="1241" y="774" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="1253" y="795" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#6a55a0">PK</text>
+<text x="1328" y="797" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">id</text>
+<text x="1625" y="796" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">uuid</text>
+<text x="1253" y="829" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#6a55a0">FK</text>
+<text x="1328" y="831" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">issue_id</text>
+<text x="1625" y="830" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">uuid</text>
+<rect x="1241" y="842" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="1253" y="863" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#6a55a0"></text>
+<text x="1328" y="865" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">issue_version</text>
+<text x="1625" y="864" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">bigint</text>
+<text x="1253" y="897" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#6a55a0"></text>
+<text x="1328" y="899" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">destination</text>
+<text x="1625" y="898" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(16)</text>
+<rect x="1241" y="910" width="508" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="1253" y="931" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#6a55a0"></text>
+<text x="1328" y="933" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">status</text>
+<text x="1625" y="932" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(16)</text>
+<text x="1253" y="965" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#6a55a0"></text>
+<text x="1328" y="967" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">payload</text>
+<text x="1625" y="966" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">jsonb</text>
+<text x="1254" y="1008" font-family="Microsoft YaHei,sans-serif" font-size="14" font-weight="normal" fill="#62768c">UK (issue_id, issue_version, destination)</text>
+<rect x="620" y="900" width="560" height="328" fill="#ffffff" stroke="#d8e1ec"/>
+<rect x="620" y="900" width="560" height="74" fill="#59697d" stroke="#59697d"/>
+<text x="638" y="931" font-family="Microsoft YaHei,sans-serif" font-size="23" font-weight="bold" fill="#ffffff">请求幂等</text>
+<text x="638" y="959" font-family="Consolas,sans-serif" font-size="18" font-weight="normal" fill="#e8f0fa">im_issue_idempotency</text>
+<rect x="621" y="974" width="558" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="633" y="995" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#59697d">PK</text>
+<text x="708" y="997" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">tenant_id</text>
+<text x="1055" y="996" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<text x="633" y="1029" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#59697d">PK</text>
+<text x="708" y="1031" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">actor_id</text>
+<text x="1055" y="1030" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<rect x="621" y="1042" width="558" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="633" y="1063" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#59697d">PK</text>
+<text x="708" y="1065" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">request_key</text>
+<text x="1055" y="1064" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(64)</text>
+<text x="633" y="1097" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#59697d"></text>
+<text x="708" y="1099" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">request_hash</text>
+<text x="1055" y="1098" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">char(64)</text>
+<rect x="621" y="1110" width="558" height="34" fill="#f4f7fb" stroke="#f4f7fb"/>
+<text x="633" y="1131" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#59697d"></text>
+<text x="708" y="1133" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">state</text>
+<text x="1055" y="1132" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">v(16)</text>
+<text x="633" y="1165" font-family="Consolas,sans-serif" font-size="14" font-weight="bold" fill="#59697d"></text>
+<text x="708" y="1167" font-family="Consolas,sans-serif" font-size="17" font-weight="normal" fill="#26364b">response_body ?</text>
+<text x="1055" y="1166" font-family="Consolas,sans-serif" font-size="15" font-weight="normal" fill="#62768c">jsonb</text>
+<text x="634" y="1208" font-family="Microsoft YaHei,sans-serif" font-size="14" font-weight="normal" fill="#62768c">PK (tenant_id, actor_id, request_key)；无问题外键</text>
+<polyline points="620,340 550,340" stroke="#62768c" stroke-width="2" fill="none"/>
+<text x="605" y="322" font-family="Microsoft YaHei,sans-serif" font-size="16" font-weight="normal" fill="#26364b">1</text>
+<text x="552" y="364" font-family="Microsoft YaHei,sans-serif" font-size="16" font-weight="normal" fill="#26364b">0..N</text>
+<polyline points="1180,330 1240,330" stroke="#62768c" stroke-width="2" fill="none"/>
+<text x="1187" y="314" font-family="Microsoft YaHei,sans-serif" font-size="16" font-weight="normal" fill="#26364b">1</text>
+<text x="1200" y="355" font-family="Microsoft YaHei,sans-serif" font-size="16" font-weight="normal" fill="#26364b">0..N</text>
+<polyline points="1180,585 1210,585 1210,815 1240,815" stroke="#62768c" stroke-width="2" fill="none"/>
+<text x="1187" y="570" font-family="Microsoft YaHei,sans-serif" font-size="16" font-weight="normal" fill="#26364b">1</text>
+<text x="1200" y="840" font-family="Microsoft YaHei,sans-serif" font-size="16" font-weight="normal" fill="#26364b">0..N</text>
+<polyline points="620,580 585,580 585,988 550,988" stroke="#62768c" stroke-width="2" fill="none"/>
+<text x="600" y="565" font-family="Microsoft YaHei,sans-serif" font-size="16" font-weight="normal" fill="#26364b">1</text>
+<text x="552" y="1015" font-family="Microsoft YaHei,sans-serif" font-size="16" font-weight="normal" fill="#26364b">0..N</text>
+<polyline points="280,542 280,830" stroke="#62768c" stroke-width="2" fill="none"/>
+<text x="292" y="575" font-family="Microsoft YaHei,sans-serif" font-size="17" font-weight="normal" fill="#26364b">0..1</text>
+<text x="292" y="809" font-family="Microsoft YaHei,sans-serif" font-size="17" font-weight="normal" fill="#26364b">0..N</text>
+<text x="294" y="687" font-family="Microsoft YaHei,sans-serif" font-size="17" font-weight="normal" fill="#62768c">action_id（可空）</text>
+<rect x="40" y="1285" width="1710" height="106" fill="#eaf0f7" stroke="#d8e1ec"/>
+<text x="60" y="1317" font-family="Microsoft YaHei,sans-serif" font-size="18" font-weight="normal" fill="#26364b">图例：PK 主键成员   /   FK 已声明的物理外键   /   ? 可空字段   /   0..N 零到多</text>
+<text x="60" y="1348" font-family="Microsoft YaHei,sans-serif" font-size="18" font-weight="normal" fill="#26364b">请求幂等表独立存在；人员、租户、项目、房间、基线、报告、批注、TC及文件均为外部逻辑引用。</text>
+<text x="60" y="1378" font-family="Microsoft YaHei,sans-serif" font-size="17" font-weight="normal" fill="#62768c">完整字段、联合唯一约束及一致性校验责任见 ER图.md；图中只绘制当前DDL真实存在的表与外键。</text>
+</svg>

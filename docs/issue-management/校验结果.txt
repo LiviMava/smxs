@@ -1,0 +1,12 @@
+静态校验通过
+日期：2026-11-07
+YApi分类：2；接口：15（核心10、依赖/扩展5）
+检查：JSON可解析、方法路径唯一、路径参数一致、鉴权/幂等头、更新版本必填。
+Schema节点：375；检查属性类型、required引用、枚举、嵌套结构。
+DDL：PostgreSQL，6张表，101个字段，12个普通/部分索引；检查主键存在、约束名唯一、外键目标及类型、索引字段、COMMENT引用、UUID/BOOLEAN/JSONB/TIMESTAMPTZ映射、无DROP/TRUNCATE及旧方言语法。
+工件一致性：重新生成yapi.json及接口文档.md，字节完全相同。
+字段字典：已从本次DDL生成。
+
+未验证：PostgreSQL实例实际执行、完整SQL语法/约束行为、完整JSON Schema元模式验证、目标YApi实机导入、运行中的后端接口、TC/文件/权限联调。
+当前未发现psql/postgres/initdb/pg_ctl/docker命令及pglast/psycopg库，未为此安装额外依赖。
+这里的检查是工件结构检查，不是业务验收通过或可上线证明。

@@ -1,0 +1,764 @@
+[
+  {
+    "name": "问题管理-分工内核心",
+    "desc": "查询、详情、编辑、处理、附件、转交；处理拆为回复和确认",
+    "list": [
+      {
+        "title": "分页查询问题列表",
+        "method": "GET",
+        "path": "/api/v1/issues",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>bucket默认TODO。TODO=当前角色有待执行动作；DONE=历史参与且当前无待执行动作；ALL=授权范围内曾参与问题。DONE不等于CLOSED。固定updatedAt DESC,id DESC排序。counts复用筛选但不受bucket及分页影响。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "bucket默认TODO。TODO=当前角色有待执行动作；DONE=历史参与且当前无待执行动作；ALL=授权范围内曾参与问题。DONE不等于CLOSED。固定updatedAt DESC,id DESC排序。counts复用筛选但不受bucket及分页影响。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          }
+        ],
+        "req_params": [],
+        "req_query": [
+          {
+            "name": "bucket",
+            "desc": "TODO/DONE/ALL，默认TODO",
+            "example": "TODO",
+            "required": "0"
+          },
+          {
+            "name": "keyword",
+            "desc": "问题编号或概述包含匹配，最多100字符；转义LIKE通配符",
+            "example": "",
+            "required": "0"
+          },
+          {
+            "name": "baselineNo",
+            "desc": "基线编号包含匹配，最多128字符",
+            "example": "",
+            "required": "0"
+          },
+          {
+            "name": "roomNo",
+            "desc": "房间编号包含匹配，最多100字符",
+            "example": "",
+            "required": "0"
+          },
+          {
+            "name": "status",
+            "desc": "DRAFT/PENDING_REPLY/REPLIED/CLOSED",
+            "example": "",
+            "required": "0"
+          },
+          {
+            "name": "severity",
+            "desc": "S/A/B/C",
+            "example": "",
+            "required": "0"
+          },
+          {
+            "name": "projectId",
+            "desc": "已授权项目ID，不扩大权限",
+            "example": "",
+            "required": "0"
+          },
+          {
+            "name": "page",
+            "desc": "正整数，默认1",
+            "example": "1",
+            "required": "0"
+          },
+          {
+            "name": "pageSize",
+            "desc": "1..100，默认20",
+            "example": "20",
+            "required": "0"
+          }
+        ],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": false,
+        "req_body_other": "",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"page\": {\"type\": \"integer\", \"description\": \"页码，从1开始\", \"minimum\": 1}, \"pageSize\": {\"type\": \"integer\", \"description\": \"页大小1..100\", \"minimum\": 1}, \"total\": {\"type\": \"integer\", \"description\": \"总数\", \"minimum\": 0}, \"items\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"issueNo\": {\"type\": \"string\", \"description\": \"问题编号\", \"maxLength\": 64}, \"title\": {\"type\": \"string\", \"description\": \"概述\", \"maxLength\": 100}, \"severity\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"等级含义及S级阻断规则待业务确认\", \"maxLength\": 1000, \"enum\": [\"S\", \"A\", \"B\", \"C\"]}, {\"type\": \"null\"}]}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"reviewId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"roomId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"roomNo\": {\"type\": \"string\", \"description\": \"房间编号\", \"maxLength\": 100}, \"baselineId\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, {\"type\": \"null\"}]}, \"baselineNo\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"基线编号\", \"maxLength\": 128}, {\"type\": \"null\"}]}, \"reportId\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, {\"type\": \"null\"}]}, \"reportName\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"报告名\", \"maxLength\": 255}, {\"type\": \"null\"}]}, \"raiserId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"raiserName\": {\"type\": \"string\", \"description\": \"提出人姓名\", \"maxLength\": 100}, \"handlerId\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, {\"type\": \"null\"}]}, \"handlerName\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"处理人姓名\", \"maxLength\": 100}, {\"type\": \"null\"}]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"updatedAt\": {\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}, \"allowedActions\": {\"type\": \"array\", \"items\": {\"type\": \"string\", \"description\": \"当前用户允许的业务操作，服务端计算\", \"maxLength\": 1000, \"enum\": [\"EDIT\", \"SUBMIT\", \"REPLY\", \"CONFIRM\", \"TRANSFER\", \"REOPEN\", \"DELETE\", \"UPLOAD\", \"RETRY_SYNC\"]}}}, \"required\": [\"id\", \"issueNo\", \"title\", \"severity\", \"status\", \"reviewId\", \"roomId\", \"roomNo\", \"baselineId\", \"baselineNo\", \"reportId\", \"reportName\", \"raiserId\", \"raiserName\", \"handlerId\", \"handlerName\", \"tcSyncStatus\", \"version\", \"updatedAt\", \"allowedActions\"], \"additionalProperties\": false}}, \"counts\": {\"type\": \"object\", \"properties\": {\"todo\": {\"type\": \"integer\", \"description\": \"同一数据权限和筛选下的问题去重数量\", \"minimum\": 0}, \"done\": {\"type\": \"integer\", \"description\": \"同一数据权限和筛选下的问题去重数量\", \"minimum\": 0}, \"all\": {\"type\": \"integer\", \"description\": \"同一数据权限和筛选下的问题去重数量\", \"minimum\": 0}}, \"required\": [\"todo\", \"done\", \"all\"], \"additionalProperties\": false}}, \"required\": [\"page\", \"pageSize\", \"total\", \"items\", \"counts\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 0
+      },
+      {
+        "title": "查询问题详情",
+        "method": "GET",
+        "path": "/api/v1/issues/{issueId}",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>返回基本信息和当前有效SCREENSHOT附件；回复附件通过处理记录返回。处理记录独立分页，避免详情无限增长。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "返回基本信息和当前有效SCREENSHOT附件；回复附件通过处理记录返回。处理记录独立分页，避免详情无限增长。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": false,
+        "req_body_other": "",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"issueNo\": {\"type\": \"string\", \"description\": \"问题编号\", \"maxLength\": 64}, \"title\": {\"type\": \"string\", \"description\": \"概述\", \"maxLength\": 100}, \"severity\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"等级含义及S级阻断规则待业务确认\", \"maxLength\": 1000, \"enum\": [\"S\", \"A\", \"B\", \"C\"]}, {\"type\": \"null\"}]}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"reviewId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"roomId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"roomNo\": {\"type\": \"string\", \"description\": \"房间编号\", \"maxLength\": 100}, \"baselineId\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, {\"type\": \"null\"}]}, \"baselineNo\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"基线编号\", \"maxLength\": 128}, {\"type\": \"null\"}]}, \"reportId\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, {\"type\": \"null\"}]}, \"reportName\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"报告名\", \"maxLength\": 255}, {\"type\": \"null\"}]}, \"raiserId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"raiserName\": {\"type\": \"string\", \"description\": \"提出人姓名\", \"maxLength\": 100}, \"handlerId\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, {\"type\": \"null\"}]}, \"handlerName\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"处理人姓名\", \"maxLength\": 100}, {\"type\": \"null\"}]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"updatedAt\": {\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}, \"allowedActions\": {\"type\": \"array\", \"items\": {\"type\": \"string\", \"description\": \"当前用户允许的业务操作，服务端计算\", \"maxLength\": 1000, \"enum\": [\"EDIT\", \"SUBMIT\", \"REPLY\", \"CONFIRM\", \"TRANSFER\", \"REOPEN\", \"DELETE\", \"UPLOAD\", \"RETRY_SYNC\"]}}, \"description\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"问题描述\", \"maxLength\": 10000}, {\"type\": \"null\"}]}, \"suggestedSolution\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"建议方案\", \"maxLength\": 10000}, {\"type\": \"null\"}]}, \"sourceType\": {\"type\": \"string\", \"description\": \"来源\", \"maxLength\": 1000, \"enum\": [\"ANNOTATION\", \"ROOM\", \"IMPORT\"]}, \"annotationId\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, {\"type\": \"null\"}]}, \"modelVersion\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"数模版本\", \"maxLength\": 64}, {\"type\": \"null\"}]}, \"createdAt\": {\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}, \"submittedAt\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}, {\"type\": \"null\"}]}, \"closedAt\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}, {\"type\": \"null\"}]}, \"attachments\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"fileName\": {\"type\": \"string\", \"description\": \"原文件名\", \"maxLength\": 255}, \"contentType\": {\"type\": \"string\", \"description\": \"实际检测MIME类型\", \"maxLength\": 128}, \"sizeBytes\": {\"type\": \"integer\", \"description\": \"文件大小，字节\", \"minimum\": 1}, \"purpose\": {\"type\": \"string\", \"description\": \"用途\", \"maxLength\": 1000, \"enum\": [\"SCREENSHOT\", \"REPLY\"]}, \"state\": {\"type\": \"string\", \"description\": \"状态\", \"maxLength\": 1000, \"enum\": [\"TEMP\", \"BOUND\", \"DELETED\"]}, \"scanStatus\": {\"type\": \"string\", \"description\": \"扫描结果\", \"maxLength\": 1000, \"enum\": [\"PENDING\", \"CLEAN\", \"REJECTED\"]}, \"createdAt\": {\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}}, \"required\": [\"id\", \"fileName\", \"contentType\", \"sizeBytes\", \"purpose\", \"state\", \"scanStatus\", \"createdAt\"], \"additionalProperties\": false}}}, \"required\": [\"id\", \"issueNo\", \"title\", \"severity\", \"status\", \"reviewId\", \"roomId\", \"roomNo\", \"baselineId\", \"baselineNo\", \"reportId\", \"reportName\", \"raiserId\", \"raiserName\", \"handlerId\", \"handlerName\", \"tcSyncStatus\", \"version\", \"updatedAt\", \"allowedActions\", \"description\", \"suggestedSolution\", \"sourceType\", \"annotationId\", \"modelVersion\", \"createdAt\", \"submittedAt\", \"closedAt\", \"attachments\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 1
+      },
+      {
+        "title": "查询处理记录",
+        "method": "GET",
+        "path": "/api/v1/issues/{issueId}/actions",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>按issueVersion ASC分页，包含全部轮次回复、退回、转交、激活和字段变更；同步错误供运维查询，不混充业务操作。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "按issueVersion ASC分页，包含全部轮次回复、退回、转交、激活和字段变更；同步错误供运维查询，不混充业务操作。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [
+          {
+            "name": "page",
+            "desc": "正整数，默认1",
+            "example": "1",
+            "required": "0"
+          },
+          {
+            "name": "pageSize",
+            "desc": "1..100，默认20",
+            "example": "20",
+            "required": "0"
+          }
+        ],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": false,
+        "req_body_other": "",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"page\": {\"type\": \"integer\", \"description\": \"页码，从1开始\", \"minimum\": 1}, \"pageSize\": {\"type\": \"integer\", \"description\": \"页大小1..100\", \"minimum\": 1}, \"total\": {\"type\": \"integer\", \"description\": \"总数\", \"minimum\": 0}, \"items\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"issueVersion\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"actionType\": {\"type\": \"string\", \"description\": \"操作\", \"maxLength\": 1000, \"enum\": [\"CREATE\", \"EDIT\", \"SUBMIT\", \"REPLY\", \"CONFIRM\", \"TRANSFER\", \"REOPEN\", \"DELETE\"]}, \"fromStatus\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, {\"type\": \"null\"}]}, \"toStatus\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"operatorId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"operatorName\": {\"type\": \"string\", \"description\": \"操作者\", \"maxLength\": 100}, \"adopted\": {\"anyOf\": [{\"type\": \"boolean\"}, {\"type\": \"null\"}]}, \"modificationCompleted\": {\"anyOf\": [{\"type\": \"boolean\"}, {\"type\": \"null\"}]}, \"handlingOpinion\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"意见\", \"maxLength\": 1000, \"enum\": [\"ACCEPTABLE\", \"RECTIFY\"]}, {\"type\": \"null\"}]}, \"rejectionReason\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"不采纳原因\", \"maxLength\": 1000}, {\"type\": \"null\"}]}, \"body\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"说明\", \"maxLength\": 1000}, {\"type\": \"null\"}]}, \"resolved\": {\"anyOf\": [{\"type\": \"boolean\"}, {\"type\": \"null\"}]}, \"fromHandlerId\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, {\"type\": \"null\"}]}, \"toHandlerId\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, {\"type\": \"null\"}]}, \"changes\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"field\": {\"type\": \"string\", \"description\": \"字段名\", \"maxLength\": 1000}, \"before\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"变更前文本\", \"maxLength\": 10000}, {\"type\": \"null\"}]}, \"after\": {\"anyOf\": [{\"type\": \"string\", \"description\": \"变更后文本\", \"maxLength\": 10000}, {\"type\": \"null\"}]}}, \"required\": [\"field\", \"before\", \"after\"], \"additionalProperties\": false}}, \"attachments\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"fileName\": {\"type\": \"string\", \"description\": \"原文件名\", \"maxLength\": 255}, \"contentType\": {\"type\": \"string\", \"description\": \"实际检测MIME类型\", \"maxLength\": 128}, \"sizeBytes\": {\"type\": \"integer\", \"description\": \"文件大小，字节\", \"minimum\": 1}, \"purpose\": {\"type\": \"string\", \"description\": \"用途\", \"maxLength\": 1000, \"enum\": [\"SCREENSHOT\", \"REPLY\"]}, \"state\": {\"type\": \"string\", \"description\": \"状态\", \"maxLength\": 1000, \"enum\": [\"TEMP\", \"BOUND\", \"DELETED\"]}, \"scanStatus\": {\"type\": \"string\", \"description\": \"扫描结果\", \"maxLength\": 1000, \"enum\": [\"PENDING\", \"CLEAN\", \"REJECTED\"]}, \"createdAt\": {\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}}, \"required\": [\"id\", \"fileName\", \"contentType\", \"sizeBytes\", \"purpose\", \"state\", \"scanStatus\", \"createdAt\"], \"additionalProperties\": false}}, \"createdAt\": {\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}}, \"required\": [\"id\", \"issueVersion\", \"actionType\", \"operatorId\", \"operatorName\", \"createdAt\", \"attachments\"], \"additionalProperties\": false}}}, \"required\": [\"page\", \"pageSize\", \"total\", \"items\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 2
+      },
+      {
+        "title": "编辑问题基本信息",
+        "method": "PATCH",
+        "path": "/api/v1/issues/{issueId}",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>DRAFT仅提出人可修改title/severity/description/suggestedSolution/handlerId/screenshotAttachmentIds；PENDING_REPLY仅当前处理人可改建议方案和截图；REPLIED仅提出人可改描述、建议方案、截图。CLOSED禁止编辑。未传字段保持原值；空字符串用于清空可选建议方案，截图数组为最终集合（可保留已有BOUND截图），空数组移除全部；不可移除历史回复附件。越权字段返回422，不得静默忽略。保存不推进状态，至少一个业务字段。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "DRAFT仅提出人可修改title/severity/description/suggestedSolution/handlerId/screenshotAttachmentIds；PENDING_REPLY仅当前处理人可改建议方案和截图；REPLIED仅提出人可改描述、建议方案、截图。CLOSED禁止编辑。未传字段保持原值；空字符串用于清空可选建议方案，截图数组为最终集合（可保留已有BOUND截图），空数组移除全部；不可移除历史回复附件。越权字段返回422，不得静默忽略。保存不推进状态，至少一个业务字段。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "required": "1"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": true,
+        "req_body_other": "{\"type\": \"object\", \"properties\": {\"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"title\": {\"type\": \"string\", \"description\": \"概述\", \"maxLength\": 100, \"minLength\": 1}, \"severity\": {\"type\": \"string\", \"description\": \"等级含义及S级阻断规则待业务确认\", \"maxLength\": 1000, \"enum\": [\"S\", \"A\", \"B\", \"C\"]}, \"description\": {\"type\": \"string\", \"description\": \"问题描述\", \"maxLength\": 10000, \"minLength\": 1}, \"suggestedSolution\": {\"type\": \"string\", \"description\": \"建议方案\", \"maxLength\": 10000}, \"handlerId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"screenshotAttachmentIds\": {\"type\": \"array\", \"items\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"maxItems\": 10, \"uniqueItems\": true, \"description\": \"仅本问题、本人上传、CLEAN且TEMP的附件ID；事务内绑定\"}}, \"required\": [\"version\"], \"additionalProperties\": false}",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}}, \"required\": [\"id\", \"version\", \"status\", \"tcSyncStatus\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 3
+      },
+      {
+        "title": "处理人提交回复",
+        "method": "POST",
+        "path": "/api/v1/issues/{issueId}/replies",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>仅PENDING_REPLY的当前处理人。adopted=true时modificationCompleted及handlingOpinion必填；false时rejectionReason非空必填，modificationCompleted/handlingOpinion必须省略。body选填最多300字符。提交后REPLIED，待提出人确认；即使未整改完成也可回复，是否允许关闭由提出人判断（待确认）。每轮回复独立保存。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "仅PENDING_REPLY的当前处理人。adopted=true时modificationCompleted及handlingOpinion必填；false时rejectionReason非空必填，modificationCompleted/handlingOpinion必须省略。body选填最多300字符。提交后REPLIED，待提出人确认；即使未整改完成也可回复，是否允许关闭由提出人判断（待确认）。每轮回复独立保存。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "required": "1"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": true,
+        "req_body_other": "{\"type\": \"object\", \"properties\": {\"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"adopted\": {\"type\": \"boolean\"}, \"modificationCompleted\": {\"type\": \"boolean\"}, \"handlingOpinion\": {\"type\": \"string\", \"description\": \"处理意见\", \"maxLength\": 1000, \"enum\": [\"ACCEPTABLE\", \"RECTIFY\"]}, \"rejectionReason\": {\"type\": \"string\", \"description\": \"不采纳理由\", \"maxLength\": 1000, \"minLength\": 1}, \"body\": {\"type\": \"string\", \"description\": \"处理说明\", \"maxLength\": 300}, \"attachmentIds\": {\"type\": \"array\", \"items\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"maxItems\": 10, \"uniqueItems\": true, \"description\": \"仅本问题、本人上传、CLEAN且TEMP的附件ID；事务内绑定\"}}, \"required\": [\"version\", \"adopted\"], \"additionalProperties\": false}",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}}, \"required\": [\"id\", \"version\", \"status\", \"tcSyncStatus\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 4
+      },
+      {
+        "title": "提出人确认或退回",
+        "method": "POST",
+        "path": "/api/v1/issues/{issueId}/confirmations",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>仅REPLIED的提出人。resolved=true转CLOSED，effective suggestedSolution（本次非空值或已存值）必须非空；false转PENDING_REPLY，comment非空必填。suggestedSolution省略保留原值；关闭不是处理人自报完成。关闭未采纳问题是否例外待确认。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "仅REPLIED的提出人。resolved=true转CLOSED，effective suggestedSolution（本次非空值或已存值）必须非空；false转PENDING_REPLY，comment非空必填。suggestedSolution省略保留原值；关闭不是处理人自报完成。关闭未采纳问题是否例外待确认。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "required": "1"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": true,
+        "req_body_other": "{\"type\": \"object\", \"properties\": {\"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"resolved\": {\"type\": \"boolean\"}, \"comment\": {\"type\": \"string\", \"description\": \"评审意见\", \"maxLength\": 1000}, \"suggestedSolution\": {\"type\": \"string\", \"description\": \"建议方案\", \"maxLength\": 10000}}, \"required\": [\"version\", \"resolved\"], \"additionalProperties\": false}",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}}, \"required\": [\"id\", \"version\", \"status\", \"tcSyncStatus\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 5
+      },
+      {
+        "title": "上传问题附件",
+        "method": "POST",
+        "path": "/api/v1/issues/{issueId}/attachments",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>multipart/form-data，由客户端生成boundary。SCREENSHOT仅与编辑权限一致；REPLY仅PENDING_REPLY当前处理人。单文件20MiB、每次绑定最多10个（拟定），截图PNG/JPEG，回复附件PNG/JPEG/PDF/DOCX/XLSX（拟定）；服务端校验真实类型及扫描。上传成功仅TEMP不改变问题状态/版本；CLEAN后才能绑定，24小时未绑定清理。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "multipart/form-data，由客户端生成boundary。SCREENSHOT仅与编辑权限一致；REPLY仅PENDING_REPLY当前处理人。单文件20MiB、每次绑定最多10个（拟定），截图PNG/JPEG，回复附件PNG/JPEG/PDF/DOCX/XLSX（拟定）；服务端校验真实类型及扫描。上传成功仅TEMP不改变问题状态/版本；CLEAN后才能绑定，24小时未绑定清理。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "form",
+        "req_body_form": [
+          {
+            "name": "file",
+            "type": "file",
+            "required": "1",
+            "desc": "单个文件"
+          },
+          {
+            "name": "purpose",
+            "type": "text",
+            "required": "1",
+            "example": "REPLY",
+            "desc": "SCREENSHOT或REPLY"
+          }
+        ],
+        "req_body_is_json_schema": false,
+        "req_body_other": "",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"fileName\": {\"type\": \"string\", \"description\": \"原文件名\", \"maxLength\": 255}, \"contentType\": {\"type\": \"string\", \"description\": \"实际检测MIME类型\", \"maxLength\": 128}, \"sizeBytes\": {\"type\": \"integer\", \"description\": \"文件大小，字节\", \"minimum\": 1}, \"purpose\": {\"type\": \"string\", \"description\": \"用途\", \"maxLength\": 1000, \"enum\": [\"SCREENSHOT\", \"REPLY\"]}, \"state\": {\"type\": \"string\", \"description\": \"状态\", \"maxLength\": 1000, \"enum\": [\"TEMP\", \"BOUND\", \"DELETED\"]}, \"scanStatus\": {\"type\": \"string\", \"description\": \"扫描结果\", \"maxLength\": 1000, \"enum\": [\"PENDING\", \"CLEAN\", \"REJECTED\"]}, \"createdAt\": {\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}}, \"required\": [\"id\", \"fileName\", \"contentType\", \"sizeBytes\", \"purpose\", \"state\", \"scanStatus\", \"createdAt\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 6
+      },
+      {
+        "title": "获取附件状态和元数据",
+        "method": "GET",
+        "path": "/api/v1/issues/{issueId}/attachments/{attachmentId}",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>用于查询异步扫描结果。TEMP仅上传人可读；BOUND按问题权限可读；附件必须属于路径问题且未删除。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "用于查询异步扫描结果。TEMP仅上传人可读；BOUND按问题权限可读；附件必须属于路径问题且未删除。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          },
+          {
+            "name": "attachmentId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": false,
+        "req_body_other": "",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"fileName\": {\"type\": \"string\", \"description\": \"原文件名\", \"maxLength\": 255}, \"contentType\": {\"type\": \"string\", \"description\": \"实际检测MIME类型\", \"maxLength\": 128}, \"sizeBytes\": {\"type\": \"integer\", \"description\": \"文件大小，字节\", \"minimum\": 1}, \"purpose\": {\"type\": \"string\", \"description\": \"用途\", \"maxLength\": 1000, \"enum\": [\"SCREENSHOT\", \"REPLY\"]}, \"state\": {\"type\": \"string\", \"description\": \"状态\", \"maxLength\": 1000, \"enum\": [\"TEMP\", \"BOUND\", \"DELETED\"]}, \"scanStatus\": {\"type\": \"string\", \"description\": \"扫描结果\", \"maxLength\": 1000, \"enum\": [\"PENDING\", \"CLEAN\", \"REJECTED\"]}, \"createdAt\": {\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}}, \"required\": [\"id\", \"fileName\", \"contentType\", \"sizeBytes\", \"purpose\", \"state\", \"scanStatus\", \"createdAt\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 7
+      },
+      {
+        "title": "获取附件下载地址",
+        "method": "GET",
+        "path": "/api/v1/issues/{issueId}/attachments/{attachmentId}/download-url",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>仅CLEAN且BOUND附件；重新校验问题及附件权限，返回有效期60秒签名URL（拟定），禁止永久公开链接，记录下载审计。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "仅CLEAN且BOUND附件；重新校验问题及附件权限，返回有效期60秒签名URL（拟定），禁止永久公开链接，记录下载审计。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          },
+          {
+            "name": "attachmentId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": false,
+        "req_body_other": "",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"url\": {\"type\": \"string\", \"description\": \"短期签名URL\", \"maxLength\": 4096, \"format\": \"uri\"}, \"expiresAt\": {\"type\": \"string\", \"description\": \"ISO8601带时区时间，例如2026-11-09T09:00:00+08:00\", \"maxLength\": 1000, \"format\": \"date-time\"}}, \"required\": [\"url\", \"expiresAt\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 8
+      },
+      {
+        "title": "转交问题",
+        "method": "POST",
+        "path": "/api/v1/issues/{issueId}/transfers",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>仅PENDING_REPLY当前处理人。targetHandlerId必须有效、具有同一项目/房间访问及处理资格，且不等于当前处理人。reason选填符合原型。原处理人历史参与关系保留，新处理人加入；状态不变，原处理人进入DONE（若同时仍有其他角色待办则以TODO优先）；新处理人TODO。同事务产生转交通知和TC同步事件。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "仅PENDING_REPLY当前处理人。targetHandlerId必须有效、具有同一项目/房间访问及处理资格，且不等于当前处理人。reason选填符合原型。原处理人历史参与关系保留，新处理人加入；状态不变，原处理人进入DONE（若同时仍有其他角色待办则以TODO优先）；新处理人TODO。同事务产生转交通知和TC同步事件。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "required": "1"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": true,
+        "req_body_other": "{\"type\": \"object\", \"properties\": {\"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"targetHandlerId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"reason\": {\"type\": \"string\", \"description\": \"转交原因\", \"maxLength\": 1000}}, \"required\": [\"version\", \"targetHandlerId\"], \"additionalProperties\": false}",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}}, \"required\": [\"id\", \"version\", \"status\", \"tcSyncStatus\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 9
+      }
+    ]
+  },
+  {
+    "name": "问题管理-依赖及待确认扩展",
+    "desc": "补齐闭环所需；责任边界需评审确认，不代表本期已承诺",
+    "list": [
+      {
+        "title": "房间创建问题草稿",
+        "method": "POST",
+        "path": "/api/v1/issues",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>依赖接口，需与评审房间负责人明确由谁实现。仅有房间提问权限者。总是创建DRAFT；提出人/项目/事业部/对象名称快照均由服务端推导。sourceType=ANNOTATION要求annotationId且sourceRef等于批注ID；ROOM人工创建要求唯一sourceRef。校验房间、评审单、基线、批注归属一致。提交另调submit。sourceRef重复同内容返回已有结果，异内容409；IMPORT由后续导入流程使用，不开放本接口。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "依赖接口，需与评审房间负责人明确由谁实现。仅有房间提问权限者。总是创建DRAFT；提出人/项目/事业部/对象名称快照均由服务端推导。sourceType=ANNOTATION要求annotationId且sourceRef等于批注ID；ROOM人工创建要求唯一sourceRef。校验房间、评审单、基线、批注归属一致。提交另调submit。sourceRef重复同内容返回已有结果，异内容409；IMPORT由后续导入流程使用，不开放本接口。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "required": "1"
+          }
+        ],
+        "req_params": [],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": true,
+        "req_body_other": "{\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\", \"description\": \"概述\", \"maxLength\": 100, \"minLength\": 1}, \"roomId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"reviewId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"baselineId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"reportId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"annotationId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"sourceType\": {\"type\": \"string\", \"description\": \"来源\", \"maxLength\": 1000, \"enum\": [\"ANNOTATION\", \"ROOM\"]}, \"sourceRef\": {\"type\": \"string\", \"description\": \"来源幂等键\", \"maxLength\": 128, \"minLength\": 1}, \"severity\": {\"type\": \"string\", \"description\": \"等级含义及S级阻断规则待业务确认\", \"maxLength\": 1000, \"enum\": [\"S\", \"A\", \"B\", \"C\"]}, \"handlerId\": {\"type\": \"string\", \"description\": \"稳定ID，字符串；不得用姓名作为关联键\", \"maxLength\": 64, \"minLength\": 1}, \"description\": {\"type\": \"string\", \"description\": \"描述\", \"maxLength\": 10000}, \"suggestedSolution\": {\"type\": \"string\", \"description\": \"建议方案\", \"maxLength\": 10000}}, \"required\": [\"title\", \"roomId\", \"reviewId\", \"sourceType\", \"sourceRef\"], \"additionalProperties\": false}",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}}, \"required\": [\"id\", \"version\", \"status\", \"tcSyncStatus\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 10
+      },
+      {
+        "title": "提交问题草稿",
+        "method": "POST",
+        "path": "/api/v1/issues/{issueId}/submit",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>依赖接口：仅DRAFT提出人，校验概述、等级、描述、处理人、房间/评审单有效及访问授权后转PENDING_REPLY。写首次submittedAt，产生TC及通知事件。提出人与处理人是否允许同人待确认。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "依赖接口：仅DRAFT提出人，校验概述、等级、描述、处理人、房间/评审单有效及访问授权后转PENDING_REPLY。写首次submittedAt，产生TC及通知事件。提出人与处理人是否允许同人待确认。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "required": "1"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": true,
+        "req_body_other": "{\"type\": \"object\", \"properties\": {\"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}}, \"required\": [\"version\"], \"additionalProperties\": false}",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}}, \"required\": [\"id\", \"version\", \"status\", \"tcSyncStatus\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 11
+      },
+      {
+        "title": "激活已关闭问题",
+        "method": "POST",
+        "path": "/api/v1/issues/{issueId}/reopen",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>待确认扩展：暂定CLOSED的提出人或当前处理人可激活；转PENDING_REPLY，清空closedAt，不覆盖历史结论，保留当前处理人；校验处理人仍有效。reason选填按原型。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "待确认扩展：暂定CLOSED的提出人或当前处理人可激活；转PENDING_REPLY，清空closedAt，不覆盖历史结论，保留当前处理人；校验处理人仍有效。reason选填按原型。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "required": "1"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": true,
+        "req_body_other": "{\"type\": \"object\", \"properties\": {\"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"reason\": {\"type\": \"string\", \"description\": \"激活说明\", \"maxLength\": 1000}}, \"required\": [\"version\"], \"additionalProperties\": false}",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}}, \"required\": [\"id\", \"version\", \"status\", \"tcSyncStatus\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 12
+      },
+      {
+        "title": "删除草稿",
+        "method": "POST",
+        "path": "/api/v1/issues/{issueId}/delete",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>待确认扩展：仅DRAFT提出人逻辑删除，version递增，写DELETE历史；不物理删除历史、不复用编号。已提交问题禁止删除。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "待确认扩展：仅DRAFT提出人逻辑删除，version递增，写DELETE历史；不物理删除历史、不复用编号。已提交问题禁止删除。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "required": "1"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": true,
+        "req_body_other": "{\"type\": \"object\", \"properties\": {\"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}}, \"required\": [\"version\"], \"additionalProperties\": false}",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}}, \"required\": [\"id\", \"version\", \"status\", \"tcSyncStatus\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 13
+      },
+      {
+        "title": "重试TC同步",
+        "method": "POST",
+        "path": "/api/v1/issues/{issueId}/tc-sync/retry",
+        "status": "undone",
+        "type": "static",
+        "tag": [
+          "v0.2评审稿"
+        ],
+        "desc": "<pre>待确认扩展：仅具有issue:sync:retry权限且问题可见用户；当前tcSyncStatus=FAILED。重排失败outbox事件，保留事件ID及业务版本，不生成重复TC对象。只更新同步元数据，不递增业务版本、不新写业务动作；与同步worker采用行锁协调。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n</pre>",
+        "markdown": "待确认扩展：仅具有issue:sync:retry权限且问题可见用户；当前tcSyncStatus=FAILED。重排失败outbox事件，保留事件ID及业务版本，不生成重复TC对象。只更新同步元数据，不递增业务版本、不新写业务动作；与同步worker采用行锁协调。\n\n评审稿v0.2，所有规则为待确认设计。认证上下文取得用户、租户、组织授权；不信任客户端身份。\n所有查询及文件下载同时校验租户、项目/房间授权和参与者权限。无权访问对象按404处理。\n写接口要求Idempotency-Key；同键同请求重放原结果，同键异请求409。更新必须带version；冲突409且不产生历史/通知/TC事件。\nHTTP 200成功；400参数错误，401未认证，403无操作权限，404不可见/不存在，409版本/状态/幂等冲突，413文件过大，415文件类型不支持，422业务规则不满足，503依赖暂不可用。\n错误响应：{\"code\":\"ISSUE_VERSION_CONFLICT\",\"message\":\"数据已更新，请刷新\",\"traceId\":\"示例追踪ID\",\"data\":null}。\n业务提交成功仅代表本地事务成功，tcSyncStatus=PENDING表示等待异步同步，不等于TC已成功。\n",
+        "req_headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{token}}",
+            "required": "1",
+            "desc": "统一认证令牌，方案待对接"
+          },
+          {
+            "name": "Idempotency-Key",
+            "value": "",
+            "example": "6acfb834-2b83-4ec1-9c34-2668c86f0112",
+            "required": "1",
+            "desc": "每次新操作生成唯一键，网络重试复用，最多64字符；保存7天"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "required": "1"
+          }
+        ],
+        "req_params": [
+          {
+            "name": "issueId",
+            "desc": "路径对象ID",
+            "example": "5b591019-f732-4f43-8121-a4313e1e3787"
+          }
+        ],
+        "req_query": [],
+        "req_body_type": "json",
+        "req_body_form": [],
+        "req_body_is_json_schema": true,
+        "req_body_other": "{\"type\": \"object\", \"properties\": {\"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}}, \"required\": [\"version\"], \"additionalProperties\": false}",
+        "res_body_type": "json",
+        "res_body_is_json_schema": true,
+        "res_body": "{\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"OK或业务错误码\", \"maxLength\": 64}, \"message\": {\"type\": \"string\", \"description\": \"结果说明\", \"maxLength\": 1000}, \"traceId\": {\"type\": \"string\", \"description\": \"追踪ID\", \"maxLength\": 64}, \"data\": {\"anyOf\": [{\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"description\": \"问题模块UUID，数据库UUID类型，对外标准UUID字符串\", \"maxLength\": 36, \"minLength\": 36, \"format\": \"uuid\"}, \"version\": {\"type\": \"integer\", \"description\": \"客户端读取到的当前版本；成功业务写入递增\", \"minimum\": 1}, \"status\": {\"type\": \"string\", \"description\": \"编制中/待回复/已回复/已关闭\", \"maxLength\": 1000, \"enum\": [\"DRAFT\", \"PENDING_REPLY\", \"REPLIED\", \"CLOSED\"]}, \"tcSyncStatus\": {\"type\": \"string\", \"description\": \"TC状态独立于问题业务状态\", \"maxLength\": 1000, \"enum\": [\"NOT_SYNCED\", \"PENDING\", \"SUCCESS\", \"FAILED\"]}}, \"required\": [\"id\", \"version\", \"status\", \"tcSyncStatus\"], \"additionalProperties\": false}, {\"type\": \"null\"}]}}, \"required\": [\"code\", \"message\", \"traceId\", \"data\"], \"additionalProperties\": false}",
+        "api_opened": false,
+        "index": 14
+      }
+    ]
+  }
+]

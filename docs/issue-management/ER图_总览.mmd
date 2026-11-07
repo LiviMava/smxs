@@ -1,0 +1,58 @@
+erDiagram
+    direction LR
+    im_issue ||..o{ im_issue_action : "issue_id"
+    im_issue ||--o{ im_issue_participant : "issue_id"
+    im_issue ||..o{ im_issue_attachment : "issue_id"
+    im_issue_action |o..o{ im_issue_attachment : "action_id"
+    im_issue ||..o{ im_issue_outbox : "issue_id"
+    im_issue["im_issue · 问题主表"] {
+        uuid id PK "应用生成UUID，接口字符串"
+        varchar(64) tenant_id "租户范围"
+        varchar(64) issue_no "业务编号，编号规则待确认，不得MAX+1"
+        varchar(100) title "问题概述"
+        varchar(20) status "DRAFT/PENDING_REPLY/REPLIED/CLOSED"
+        bigint version "乐观锁版本，每次业务写入递增"
+        varchar(64) raiser_id "外部逻辑引用"
+        varchar(64) handler_id "外部逻辑引用 可空"
+        varchar(64) room_id "外部逻辑引用"
+        varchar(16) tc_sync_status "NOT_SYNCED/PENDING/SUCCESS/FAILED"
+    }
+    im_issue_action["im_issue_action · 处理记录"] {
+        uuid id PK
+        uuid issue_id FK "必填外键"
+        bigint issue_version "完成操作后的主表版本"
+        varchar(20) action_type "CREATE/EDIT/SUBMIT/REPLY/CONFIRM/TRANSFER/REOPEN/DELETE"
+        varchar(64) operator_id "外部逻辑引用"
+        boolean adopted "回复是否采纳"
+        boolean resolved "提出人确认是否解决"
+    }
+    im_issue_participant["im_issue_participant · 历史参与者"] {
+        uuid issue_id PK,FK "必填外键；联合主键成员"
+        varchar(64) user_id PK "外部逻辑引用；联合主键成员"
+        varchar(64) tenant_id "租户范围"
+        timestamptz(3) last_participated_at
+    }
+    im_issue_attachment["im_issue_attachment · 问题附件"] {
+        uuid id PK
+        uuid issue_id FK "必填外键"
+        uuid action_id FK "可空外键 0..1"
+        varchar(16) purpose "SCREENSHOT/REPLY"
+        varchar(16) state "TEMP/BOUND/DELETED"
+        varchar(512) object_key "内部对象存储键，不直接对外返回"
+    }
+    im_issue_outbox["im_issue_outbox · 可靠事件"] {
+        uuid id PK
+        uuid issue_id FK "必填外键"
+        bigint issue_version
+        varchar(16) destination "TC/NOTIFICATION"
+        varchar(16) status "PENDING/PROCESSING/SUCCESS/FAILED"
+        jsonb payload "此版本完整同步快照或通知载荷"
+    }
+    im_issue_idempotency["im_issue_idempotency · 请求幂等"] {
+        varchar(64) tenant_id PK "租户范围；联合主键成员"
+        varchar(64) actor_id PK "外部逻辑引用；联合主键成员"
+        varchar(64) request_key PK "；联合主键成员"
+        char(64) request_hash "方法+路径+规范化请求体或文件SHA256的摘要"
+        varchar(16) state
+        jsonb response_body
+    }
